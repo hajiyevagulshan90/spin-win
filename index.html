@@ -1,9 +1,9 @@
-function doGet() {
-  return HtmlService.createHtmlOutput(`
 <!DOCTYPE html>
-<html>
+<html lang="az">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
   <title>Azərbaycan HR İnstitutu – Endirim Çarxı</title>
 
   <style>
@@ -11,9 +11,15 @@ function doGet() {
       box-sizing: border-box;
     }
 
-    body {
+    html, body {
       margin: 0;
+      width: 100%;
+      min-height: 100%;
+    }
+
+    body {
       min-height: 100vh;
+      min-height: 100dvh;
       font-family: Arial, sans-serif;
       background: linear-gradient(135deg, #111111, #292929);
       color: white;
@@ -21,17 +27,19 @@ function doGet() {
       justify-content: center;
       align-items: center;
       overflow: hidden;
+      -webkit-user-select: none;
+      user-select: none;
     }
 
     .container {
       width: 100%;
       max-width: 500px;
       text-align: center;
-      padding: 25px;
+      padding: 20px;
     }
 
     h1 {
-      font-size: 28px;
+      font-size: clamp(24px, 7vw, 32px);
       margin: 0 0 8px;
       letter-spacing: 1px;
     }
@@ -44,18 +52,20 @@ function doGet() {
 
     .wheel-container {
       position: relative;
-      width: min(85vw, 420px);
-      height: min(85vw, 420px);
+      width: min(82vw, 420px);
+      height: min(82vw, 420px);
       margin: 0 auto 25px;
     }
 
     canvas {
+      display: block;
       width: 100%;
       height: 100%;
       border-radius: 50%;
       box-shadow:
         0 0 0 8px white,
         0 0 35px rgba(255,255,255,0.2);
+      transform-origin: center center;
     }
 
     .pointer {
@@ -83,10 +93,15 @@ function doGet() {
       cursor: pointer;
       box-shadow: 0 8px 25px rgba(0,0,0,0.3);
       transition: transform 0.15s;
+      -webkit-tap-highlight-color: transparent;
     }
 
     button:hover {
       transform: scale(1.05);
+    }
+
+    button:active {
+      transform: scale(0.97);
     }
 
     button:disabled {
@@ -105,7 +120,7 @@ function doGet() {
     }
 
     .discount {
-      font-size: 38px;
+      font-size: clamp(32px, 10vw, 38px);
       font-weight: bold;
       margin-top: 4px;
     }
@@ -114,13 +129,6 @@ function doGet() {
       margin-top: 10px;
       font-size: 12px;
       opacity: 0.6;
-    }
-
-    .already-used {
-      font-size: 15px;
-      line-height: 1.5;
-      opacity: 0.8;
-      margin-top: 15px;
     }
   </style>
 </head>
@@ -137,10 +145,11 @@ function doGet() {
 
   <div class="wheel-container">
     <div class="pointer"></div>
+
     <canvas id="wheel" width="500" height="500"></canvas>
   </div>
 
-  <button id="spinButton" onclick="spin()">
+  <button id="spinButton" type="button" onclick="spin()">
     FIRLAT
   </button>
 
@@ -180,40 +189,44 @@ let currentRotation = 0;
 let spinning = false;
 
 
-// ------------------------------------
-// İŞTİRAKÇININ ƏVVƏL SPİN EDİB-ETMƏDİYİNİ YOXLAYIR
-// ------------------------------------
+/* ----------------------------------
+   ƏVVƏL İSTİFADƏ EDİLİB?
+---------------------------------- */
 
-const alreadySpun = localStorage.getItem("hr_spin_used");
+const alreadySpun =
+  localStorage.getItem("hr_spin_used");
 
 if (alreadySpun === "true") {
 
-  const button = document.getElementById("spinButton");
+  const button =
+    document.getElementById("spinButton");
 
   button.disabled = true;
-  button.innerText = "ARTIQ İSTİFADƏ EDİLİB";
+
+  button.innerText =
+    "ARTIQ İSTİFADƏ EDİLİB";
 
   document.getElementById("resultTitle").innerText =
     "Siz artıq iştirak etmisiniz.";
-
-  document.getElementById("result").innerText =
-    "";
-
 }
 
 
-// ------------------------------------
-// ÇARXI ÇƏK
-// ------------------------------------
+/* ----------------------------------
+   ÇARXI ÇƏK
+---------------------------------- */
 
 function drawWheel() {
 
   const center = canvas.width / 2;
   const radius = canvas.width / 2;
-
   const slice = (Math.PI * 2) / discounts.length;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
 
   discounts.forEach((discount, i) => {
 
@@ -241,11 +254,13 @@ function drawWheel() {
     ctx.lineWidth = 4;
     ctx.stroke();
 
-    // Yazı
     ctx.save();
 
     ctx.translate(center, center);
-    ctx.rotate(startAngle + slice / 2);
+
+    ctx.rotate(
+      startAngle + slice / 2
+    );
 
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 32px Arial";
@@ -261,23 +276,16 @@ function drawWheel() {
     ctx.restore();
 
   });
-
 }
 
 
-// ------------------------------------
-// TƏSADÜFİ ENDİRİM SEÇ
-// ------------------------------------
+/* ----------------------------------
+   ENDİRİM SEÇİMİ
+---------------------------------- */
 
 function chooseDiscount() {
 
   const random = Math.random();
-
-  // 5%   → 35%
-  // 10%  → 30%
-  // 30%  → 20%
-  // 50%  → 15%
-  // 100% → SERVER TƏRƏFİNDƏ HƏR 50-Cİ SPİNDƏ
 
   if (random < 0.35) {
     return 0;
@@ -295,16 +303,18 @@ function chooseDiscount() {
 }
 
 
-// ------------------------------------
-// SPİN
-// ------------------------------------
+/* ----------------------------------
+   SPİN
+---------------------------------- */
 
 function spin() {
 
   if (spinning) return;
 
-  // Eyni brauzerdə ikinci dəfə spinə icazə vermə
-  if (localStorage.getItem("hr_spin_used") === "true") {
+  if (
+    localStorage.getItem("hr_spin_used")
+    === "true"
+  ) {
 
     document.getElementById("resultTitle").innerText =
       "Siz artıq iştirak etmisiniz.";
@@ -314,7 +324,8 @@ function spin() {
 
   spinning = true;
 
-  const button = document.getElementById("spinButton");
+  const button =
+    document.getElementById("spinButton");
 
   button.disabled = true;
 
@@ -322,72 +333,45 @@ function spin() {
   document.getElementById("result").innerText = "";
 
   /*
-   * Serverdən ümumi spin sayını alırıq.
-   *
-   * Hər 50-ci spin avtomatik 100% olacaq.
-   */
+    İNDİLİK TEST ÜÇÜN
+    5 / 10 / 30 / 50 faiz işləyir.
+  */
 
-  google.script.run
-    .withSuccessHandler(function(response) {
+  const selectedIndex =
+    chooseDiscount();
 
-      let selectedIndex;
-
-      if (response.is50thSpin === true) {
-
-        // 50-ci spin → 100%
-        selectedIndex = 4;
-
-      } else {
-
-        // Digər spinlər → 5 / 10 / 30 / 50
-        selectedIndex = chooseDiscount();
-
-      }
-
-      startAnimation(selectedIndex);
-
-    })
-    .withFailureHandler(function(error) {
-
-      spinning = false;
-      button.disabled = false;
-
-      document.getElementById("resultTitle").innerText =
-        "Xəta baş verdi.";
-
-      console.error(error);
-
-    })
-    .registerSpin();
-
+  startAnimation(selectedIndex);
 }
 
 
-// ------------------------------------
-// ANİMASİYA
-// ------------------------------------
+/* ----------------------------------
+   ANİMASİYA
+---------------------------------- */
 
 function startAnimation(selectedIndex) {
 
-  const button = document.getElementById("spinButton");
+  const button =
+    document.getElementById("spinButton");
 
-  const slice = 360 / discounts.length;
-
-  /*
-   * Seçilmiş hissənin mərkəzini yuxarıdakı
-   * göstəricinin altına gətiririk.
-   */
+  const slice =
+    360 / discounts.length;
 
   const targetAngle =
-    270 - (selectedIndex * slice + slice / 2);
+    270 -
+    (
+      selectedIndex * slice +
+      slice / 2
+    );
 
-  const extraSpins = 5 * 360;
+  const extraSpins =
+    5 * 360;
 
   const currentNormalized =
-    currentRotation % 360;
+    ((currentRotation % 360) + 360) % 360;
 
   let rotationDifference =
-    targetAngle - currentNormalized;
+    targetAngle -
+    currentNormalized;
 
   if (rotationDifference < 0) {
     rotationDifference += 360;
@@ -400,55 +384,74 @@ function startAnimation(selectedIndex) {
 
   const duration = 4500;
 
-  const start = performance.now();
+  const start =
+    performance.now();
 
-  const initialRotation = currentRotation;
+  const initialRotation =
+    currentRotation;
+
 
   function animate(time) {
 
-    const elapsed = time - start;
+    const elapsed =
+      time - start;
 
     const progress =
-      Math.min(elapsed / duration, 1);
+      Math.min(
+        elapsed / duration,
+        1
+      );
 
-    // Yumşaq dayanma effekti
     const ease =
-      1 - Math.pow(1 - progress, 4);
+      1 -
+      Math.pow(
+        1 - progress,
+        4
+      );
 
     currentRotation =
       initialRotation +
-      (finalRotation - initialRotation) * ease;
+      (
+        finalRotation -
+        initialRotation
+      ) * ease;
 
     canvas.style.transform =
-      "rotate(" + currentRotation + "deg)";
+      "rotate(" +
+      currentRotation +
+      "deg)";
+
 
     if (progress < 1) {
 
-      requestAnimationFrame(animate);
+      requestAnimationFrame(
+        animate
+      );
 
     } else {
 
       spinning = false;
 
-      // İştirak artıq istifadə olunub
-      localStorage.setItem("hr_spin_used", "true");
+      localStorage.setItem(
+        "hr_spin_used",
+        "true"
+      );
 
       document.getElementById("resultTitle").innerText =
         "TƏBRİKLƏR!";
 
       document.getElementById("result").innerText =
-        discounts[selectedIndex] + " ENDİRİM";
+        discounts[selectedIndex] +
+        " ENDİRİM";
 
       button.disabled = true;
 
       button.innerText =
         "ARTIQ İSTİFADƏ EDİLİB";
     }
-
   }
 
   requestAnimationFrame(animate);
-
 }
 
 
@@ -458,44 +461,3 @@ drawWheel();
 
 </body>
 </html>
-`);
-}
-
-
-// ------------------------------------
-// SERVER TƏRƏFİNDƏ SPİN SAYĞACI
-// ------------------------------------
-
-function registerSpin() {
-
-  const lock = LockService.getScriptLock();
-
-  lock.waitLock(30000);
-
-  try {
-
-    const properties =
-      PropertiesService.getScriptProperties();
-
-    let spinCount =
-      Number(properties.getProperty("TOTAL_SPINS") || 0);
-
-    spinCount++;
-
-    properties.setProperty(
-      "TOTAL_SPINS",
-      String(spinCount)
-    );
-
-    return {
-      count: spinCount,
-      is50thSpin: spinCount % 50 === 0
-    };
-
-  } finally {
-
-    lock.releaseLock();
-
-  }
-
-}
