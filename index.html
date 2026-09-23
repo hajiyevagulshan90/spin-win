@@ -9,9 +9,11 @@
   <style>
     * {
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    html, body {
+    html,
+    body {
       margin: 0;
       width: 100%;
       min-height: 100%;
@@ -27,19 +29,17 @@
       justify-content: center;
       align-items: center;
       overflow: hidden;
-      -webkit-user-select: none;
-      user-select: none;
     }
 
     .container {
       width: 100%;
-      max-width: 500px;
+      max-width: 520px;
       text-align: center;
-      padding: 20px;
+      padding: 25px 20px;
     }
 
     h1 {
-      font-size: clamp(24px, 7vw, 32px);
+      font-size: 28px;
       margin: 0 0 8px;
       letter-spacing: 1px;
     }
@@ -52,9 +52,9 @@
 
     .wheel-container {
       position: relative;
-      width: min(82vw, 420px);
-      height: min(82vw, 420px);
-      margin: 0 auto 25px;
+      width: min(85vw, 420px);
+      height: min(85vw, 420px);
+      margin: 0 auto 28px;
     }
 
     canvas {
@@ -65,7 +65,7 @@
       box-shadow:
         0 0 0 8px white,
         0 0 35px rgba(255,255,255,0.2);
-      transform-origin: center center;
+      transform: rotate(0deg);
     }
 
     .pointer {
@@ -93,25 +93,21 @@
       cursor: pointer;
       box-shadow: 0 8px 25px rgba(0,0,0,0.3);
       transition: transform 0.15s;
-      -webkit-tap-highlight-color: transparent;
     }
 
     button:hover {
       transform: scale(1.05);
     }
 
-    button:active {
-      transform: scale(0.97);
-    }
-
     button:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+      transform: none;
     }
 
     .result {
       margin-top: 22px;
-      min-height: 65px;
+      min-height: 70px;
     }
 
     .result-title {
@@ -120,9 +116,9 @@
     }
 
     .discount {
-      font-size: clamp(32px, 10vw, 38px);
+      font-size: 38px;
       font-weight: bold;
-      margin-top: 4px;
+      margin-top: 5px;
     }
 
     .small {
@@ -130,332 +126,508 @@
       font-size: 12px;
       opacity: 0.6;
     }
+
+    @media (max-width: 500px) {
+      .container {
+        padding: 20px 15px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .subtitle {
+        margin-bottom: 20px;
+      }
+
+      .wheel-container {
+        width: min(82vw, 380px);
+        height: min(82vw, 380px);
+      }
+
+      button {
+        font-size: 18px;
+        padding: 14px 40px;
+      }
+
+      .discount {
+        font-size: 34px;
+      }
+    }
   </style>
 </head>
 
 <body>
 
-<div class="container">
+  <div class="container">
 
-  <h1>ENDİRİM ÇARXI</h1>
+    <h1>ENDİRİM ÇARXI</h1>
 
-  <div class="subtitle">
-    Təlimlərimizə endirim qazan!
+    <div class="subtitle">
+      Təlimlərimizə endirim qazan!
+    </div>
+
+    <div class="wheel-container">
+      <div class="pointer"></div>
+      <canvas id="wheel" width="500" height="500"></canvas>
+    </div>
+
+    <button id="spinButton" onclick="spin()">
+      FIRLAT
+    </button>
+
+    <div class="result">
+      <div class="result-title" id="resultTitle"></div>
+      <div class="discount" id="result"></div>
+    </div>
+
+    <div class="small">
+      Azərbaycan HR İnstitutu
+    </div>
+
   </div>
 
-  <div class="wheel-container">
-    <div class="pointer"></div>
-
-    <canvas id="wheel" width="500" height="500"></canvas>
-  </div>
-
-  <button id="spinButton" type="button" onclick="spin()">
-    FIRLAT
-  </button>
-
-  <div class="result">
-    <div class="result-title" id="resultTitle"></div>
-    <div class="discount" id="result"></div>
-  </div>
-
-  <div class="small">
-    Azərbaycan HR İnstitutu
-  </div>
-
-</div>
 
 <script>
 
-const canvas = document.getElementById("wheel");
-const ctx = canvas.getContext("2d");
+  /* ================================
+     ÇARX MƏLUMATLARI
+  ================================= */
 
-const discounts = [
-  "5%",
-  "10%",
-  "30%",
-  "50%",
-  "100%"
-];
+  const discounts = [
+    "5%",
+    "10%",
+    "30%",
+    "50%",
+    "100%"
+  ];
 
-const colors = [
-  "#D4AF37",
-  "#1E3A5F",
-  "#7A1F1F",
-  "#176B5D",
-  "#333333"
-];
-
-let currentRotation = 0;
-let spinning = false;
+  const colors = [
+    "#D4AF37",
+    "#1E3A5F",
+    "#7A1F1F",
+    "#176B5D",
+    "#333333"
+  ];
 
 
-/* ----------------------------------
-   ƏVVƏL İSTİFADƏ EDİLİB?
----------------------------------- */
+  /* ================================
+     CANVAS
+  ================================= */
 
-const alreadySpun =
-  localStorage.getItem("hr_spin_used");
+  const canvas = document.getElementById("wheel");
+  const ctx = canvas.getContext("2d");
 
-if (alreadySpun === "true") {
-
-  const button =
-    document.getElementById("spinButton");
-
-  button.disabled = true;
-
-  button.innerText =
-    "ARTIQ İSTİFADƏ EDİLİB";
-
-  document.getElementById("resultTitle").innerText =
-    "Siz artıq iştirak etmisiniz.";
-}
+  let currentRotation = 0;
+  let spinning = false;
 
 
-/* ----------------------------------
-   ÇARXI ÇƏK
----------------------------------- */
+  /* ================================
+     İŞTİRAKÇI ƏVVƏL SPİN EDİB?
+  ================================= */
 
-function drawWheel() {
+  const alreadySpun =
+    localStorage.getItem("hr_spin_used");
 
-  const center = canvas.width / 2;
-  const radius = canvas.width / 2;
-  const slice = (Math.PI * 2) / discounts.length;
+  if (alreadySpun === "true") {
 
-  ctx.clearRect(
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  );
+    const button =
+      document.getElementById("spinButton");
 
-  discounts.forEach((discount, i) => {
+    button.disabled = true;
 
-    const startAngle = i * slice;
-    const endAngle = startAngle + slice;
-
-    ctx.beginPath();
-
-    ctx.moveTo(center, center);
-
-    ctx.arc(
-      center,
-      center,
-      radius,
-      startAngle,
-      endAngle
-    );
-
-    ctx.closePath();
-
-    ctx.fillStyle = colors[i];
-    ctx.fill();
-
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 4;
-    ctx.stroke();
-
-    ctx.save();
-
-    ctx.translate(center, center);
-
-    ctx.rotate(
-      startAngle + slice / 2
-    );
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 32px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    ctx.fillText(
-      discount,
-      radius * 0.65,
-      0
-    );
-
-    ctx.restore();
-
-  });
-}
-
-
-/* ----------------------------------
-   ENDİRİM SEÇİMİ
----------------------------------- */
-
-function chooseDiscount() {
-
-  const random = Math.random();
-
-  if (random < 0.35) {
-    return 0;
-  }
-
-  if (random < 0.65) {
-    return 1;
-  }
-
-  if (random < 0.85) {
-    return 2;
-  }
-
-  return 3;
-}
-
-
-/* ----------------------------------
-   SPİN
----------------------------------- */
-
-function spin() {
-
-  if (spinning) return;
-
-  if (
-    localStorage.getItem("hr_spin_used")
-    === "true"
-  ) {
+    button.innerText =
+      "ARTIQ İSTİFADƏ EDİLİB";
 
     document.getElementById("resultTitle").innerText =
       "Siz artıq iştirak etmisiniz.";
 
-    return;
   }
 
-  spinning = true;
 
-  const button =
-    document.getElementById("spinButton");
+  /* ================================
+     ÇARXI ÇƏK
+  ================================= */
 
-  button.disabled = true;
+  function drawWheel() {
 
-  document.getElementById("resultTitle").innerText = "";
-  document.getElementById("result").innerText = "";
+    const center = canvas.width / 2;
+    const radius = canvas.width / 2;
 
-  /*
-    İNDİLİK TEST ÜÇÜN
-    5 / 10 / 30 / 50 faiz işləyir.
-  */
+    const slice =
+      (Math.PI * 2) / discounts.length;
 
-  const selectedIndex =
-    chooseDiscount();
-
-  startAnimation(selectedIndex);
-}
-
-
-/* ----------------------------------
-   ANİMASİYA
----------------------------------- */
-
-function startAnimation(selectedIndex) {
-
-  const button =
-    document.getElementById("spinButton");
-
-  const slice =
-    360 / discounts.length;
-
-  const targetAngle =
-    270 -
-    (
-      selectedIndex * slice +
-      slice / 2
+    ctx.clearRect(
+      0,
+      0,
+      canvas.width,
+      canvas.height
     );
 
-  const extraSpins =
-    5 * 360;
 
-  const currentNormalized =
-    ((currentRotation % 360) + 360) % 360;
+    discounts.forEach((discount, i) => {
 
-  let rotationDifference =
-    targetAngle -
-    currentNormalized;
+      const startAngle =
+        i * slice;
 
-  if (rotationDifference < 0) {
-    rotationDifference += 360;
+      const endAngle =
+        startAngle + slice;
+
+
+      /* Hissə */
+
+      ctx.beginPath();
+
+      ctx.moveTo(
+        center,
+        center
+      );
+
+      ctx.arc(
+        center,
+        center,
+        radius,
+        startAngle,
+        endAngle
+      );
+
+      ctx.closePath();
+
+      ctx.fillStyle =
+        colors[i];
+
+      ctx.fill();
+
+
+      /* Xətlər */
+
+      ctx.strokeStyle =
+        "#ffffff";
+
+      ctx.lineWidth = 4;
+
+      ctx.stroke();
+
+
+      /* Mətn */
+
+      ctx.save();
+
+      ctx.translate(
+        center,
+        center
+      );
+
+      ctx.rotate(
+        startAngle + slice / 2
+      );
+
+      ctx.fillStyle =
+        "#ffffff";
+
+      ctx.font =
+        "bold 32px Arial";
+
+      ctx.textAlign =
+        "center";
+
+      ctx.textBaseline =
+        "middle";
+
+      ctx.fillText(
+        discount,
+        radius * 0.65,
+        0
+      );
+
+      ctx.restore();
+
+    });
+
   }
 
-  const finalRotation =
-    currentRotation +
-    extraSpins +
-    rotationDifference;
 
-  const duration = 4500;
+  /* ================================
+     ENDİRİM SEÇİMİ
 
-  const start =
-    performance.now();
+     Ehtimallar:
 
-  const initialRotation =
-    currentRotation;
+     5%   → 35%
+     10%  → 30%
+     30%  → 20%
+     50%  → 15%
 
+     100% bu versiyada xüsusi
+     olaraq avtomatik verilmir.
+  ================================= */
 
-  function animate(time) {
+  function chooseDiscount() {
 
-    const elapsed =
-      time - start;
+    const random =
+      Math.random();
 
-    const progress =
-      Math.min(
-        elapsed / duration,
-        1
-      );
-
-    const ease =
-      1 -
-      Math.pow(
-        1 - progress,
-        4
-      );
-
-    currentRotation =
-      initialRotation +
-      (
-        finalRotation -
-        initialRotation
-      ) * ease;
-
-    canvas.style.transform =
-      "rotate(" +
-      currentRotation +
-      "deg)";
-
-
-    if (progress < 1) {
-
-      requestAnimationFrame(
-        animate
-      );
-
-    } else {
-
-      spinning = false;
-
-      localStorage.setItem(
-        "hr_spin_used",
-        "true"
-      );
-
-      document.getElementById("resultTitle").innerText =
-        "TƏBRİKLƏR!";
-
-      document.getElementById("result").innerText =
-        discounts[selectedIndex] +
-        " ENDİRİM";
-
-      button.disabled = true;
-
-      button.innerText =
-        "ARTIQ İSTİFADƏ EDİLİB";
+    if (random < 0.35) {
+      return 0;
     }
+
+    if (random < 0.65) {
+      return 1;
+    }
+
+    if (random < 0.85) {
+      return 2;
+    }
+
+    return 3;
   }
 
-  requestAnimationFrame(animate);
-}
+
+  /* ================================
+     SPIN
+  ================================= */
+
+  function spin() {
+
+    if (spinning) {
+      return;
+    }
 
 
-drawWheel();
+    /* İkinci dəfə istifadə */
+
+    if (
+      localStorage.getItem("hr_spin_used")
+      === "true"
+    ) {
+
+      document.getElementById(
+        "resultTitle"
+      ).innerText =
+        "Siz artıq iştirak etmisiniz.";
+
+      return;
+    }
+
+
+    spinning = true;
+
+
+    const button =
+      document.getElementById(
+        "spinButton"
+      );
+
+    button.disabled = true;
+
+
+    document.getElementById(
+      "resultTitle"
+    ).innerText = "";
+
+    document.getElementById(
+      "result"
+    ).innerText = "";
+
+
+    /* Təsadüfi endirim */
+
+    const selectedIndex =
+      chooseDiscount();
+
+
+    startAnimation(
+      selectedIndex
+    );
+
+  }
+
+
+  /* ================================
+     ANİMASİYA
+  ================================= */
+
+  function startAnimation(
+    selectedIndex
+  ) {
+
+    const button =
+      document.getElementById(
+        "spinButton"
+      );
+
+
+    const slice =
+      360 / discounts.length;
+
+
+    /*
+      Seçilmiş hissənin mərkəzini
+      yuxarıdakı göstəricinin altına
+      gətiririk.
+    */
+
+    const targetAngle =
+      270 -
+      (
+        selectedIndex * slice
+        +
+        slice / 2
+      );
+
+
+    /* 5 tam dövr */
+
+    const extraSpins =
+      5 * 360;
+
+
+    const currentNormalized =
+      currentRotation % 360;
+
+
+    let rotationDifference =
+      targetAngle -
+      currentNormalized;
+
+
+    if (rotationDifference < 0) {
+
+      rotationDifference += 360;
+
+    }
+
+
+    const finalRotation =
+      currentRotation +
+      extraSpins +
+      rotationDifference;
+
+
+    const duration =
+      4500;
+
+
+    const start =
+      performance.now();
+
+
+    const initialRotation =
+      currentRotation;
+
+
+    function animate(time) {
+
+      const elapsed =
+        time - start;
+
+
+      const progress =
+        Math.min(
+          elapsed / duration,
+          1
+        );
+
+
+      /* Yumşaq dayanma */
+
+      const ease =
+        1 -
+        Math.pow(
+          1 - progress,
+          4
+        );
+
+
+      currentRotation =
+        initialRotation +
+        (
+          finalRotation -
+          initialRotation
+        ) * ease;
+
+
+      canvas.style.transform =
+        "rotate(" +
+        currentRotation +
+        "deg)";
+
+
+      if (progress < 1) {
+
+        requestAnimationFrame(
+          animate
+        );
+
+      } else {
+
+        finishSpin(
+          selectedIndex,
+          button
+        );
+
+      }
+
+    }
+
+
+    requestAnimationFrame(
+      animate
+    );
+
+  }
+
+
+  /* ================================
+     SPİN BİTDİ
+  ================================= */
+
+  function finishSpin(
+    selectedIndex,
+    button
+  ) {
+
+    spinning = false;
+
+
+    /*
+      Bu brauzerdə artıq istifadə
+      edildiyini yadda saxla.
+    */
+
+    localStorage.setItem(
+      "hr_spin_used",
+      "true"
+    );
+
+
+    document.getElementById(
+      "resultTitle"
+    ).innerText =
+      "TƏBRİKLƏR!";
+
+
+    document.getElementById(
+      "result"
+    ).innerText =
+      discounts[selectedIndex]
+      +
+      " ENDİRİM";
+
+
+    button.disabled = true;
+
+
+    button.innerText =
+      "ARTIQ İSTİFADƏ EDİLİB";
+
+  }
+
+
+  /* ================================
+     BAŞLAT
+  ================================= */
+
+  drawWheel();
 
 </script>
 
